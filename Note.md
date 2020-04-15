@@ -7,10 +7,12 @@
 3. S3に保存
 
 ## 1. 前処理
-目的
+### 前処理の目的
+
 OCRの精度向上
 
-アプローチ
+### アプローチ
+
 - 写真から植物のプレートのみを取得し、プレートの形を補正
   - 四角を抽出
     - 直線検出
@@ -27,8 +29,8 @@ OCRの精度向上
 - OpenCV
 - DeepLearning
 
+### メモ
 
-メモ
 - 前処理
   - マスク
     - エッジ検出するにしても、前処理で不要な箇所はマスクしたい
@@ -38,10 +40,18 @@ OCRの精度向上
       - Greenにだけ一定の閾値を設けて、マスク
         - ⇨プレートだけ、目立つようにはできなかった。
       - RGBの各値のレンジを設け、マスク
+  
 - 二値化
-  - 適応的二値化処理
-  - 大津の二値化処理
+  - 適応的閾値処理で二値化
+  - 大津の二値化
+  
 - 輪郭の近似
+
+- 輪郭の検出
+
+   - OpenCV
+      - findContours
+
 - エッジ検出
   - 方法
     - 勾配法
@@ -54,16 +64,38 @@ OCRの精度向上
      -  dilated gradient mask
      -  refrence
         -  https://jp.mathworks.com/discovery/edge-detection.html
+  
 -  文字領域抽出
+   
    -  MSER
+   
 - 直線検出
   - （確率的）ハフ変換
     - 前処理が必要そう
       - ブラー
       - 二値化
   - LSD
+  
 - 領域検出
-  - 大津の2値化
+
+  - 流れ
+    - 特徴量抽出・特徴空間生成
+      - 閾値は識別関数表現の1つ
+    - 画像空間への反映
+  - 分類
+     - 教師なし
+       -  領域の輝度値や抽出したい形状に関するエネルギー(目的関 数)を最小化・最大化する事で特徴量の分布や滑らかさを基準
+       - 方法
+         - 大津の二値化法
+           - 二値化だけでは、領域抽出が難しそう
+         -  Snake (Active Contour)（動的輪郭モデル）
+         - Graph Cuts
+         - Mean Shift
+         - Water Shed (Region Growing)
+         - モデルを用いた検出
+           - エッジ抽出、コーナー抽出、テンプレートマッチング、線・円・形状抽出
+     - 教師あり
+
 - 参考資料
   - http://agora.ex.nii.ac.jp/~kitamoto/research/publications/k:tric06y.pdf
   - http://www2.riken.jp/brict/Yoshizawa/Lectures/IP2011/Lec24.pdf
