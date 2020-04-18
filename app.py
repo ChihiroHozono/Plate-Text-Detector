@@ -23,17 +23,17 @@ def main(output_dir, input_img):
 
     org_img = cv2.imread(input_img)
     processed_img = org_img
-    file_name = os.path.basename(input_img)
+    basename = os.path.basename(input_img)
+    file_name = os.path.splitext(basename)[0] + ".png"
     output_path = os.path.join(output_dir, file_name)
 
-    # Note: Start Process
     img = mask_img(processed_img)
     img = noise_reduction(img)
     img = binalize(img)
     img = get_edge(img)
     contour = get_contour(img)
     img = get_plate_img(org_img, contour)
-    cv2.imwrite(f"{output_path}.png", img)
+    cv2.imwrite(output_path, img)
 
 
 if __name__ == "__main__":

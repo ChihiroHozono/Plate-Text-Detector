@@ -3,7 +3,7 @@ import numpy as np
 
 
 def mask_img(img):
-    masked_img = np.full_like(img, 255, dtype=np.uint8)
+    masked_img = np.full_like(img, 0, dtype=np.uint8)
     hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     for i_row, row in enumerate(hsv_img):
@@ -11,11 +11,29 @@ def mask_img(img):
             hue = column[0] * 2  # NOTE: OpenCVのHueの幅が0~179の為
 
             if (100 <= hue) and (hue <= 200):
-                masked_img[i_row][i_column] = np.array([0, 0, 0], dtype=np.uint8)
+                masked_img[i_row][i_column] = np.array([255, 255, 255], dtype=np.uint8)
             else:
                 continue
 
     return masked_img
+
+
+def noise_reduction(img):
+
+    # 平滑化がないと領域抽出で、プレート内の文字領域を抽出してしまう。
+    img = cv2.medianBlur(img, 15)
+
+    # 画像の膨張・縮小によるノイズ除去
+    kernel = np.ones((5, 5), np.uint8)
+
+    # 先にクロージングする事で、オープニング時にプレートのピクセルが欠損する事を防ぐ。
+    img = cv2.dilate(img, kernel, iterations=5)
+    img = cv2.erode(img, kernel, iterations=5)
+
+    img = cv2.erode(img, kernel, iterations=15)
+    img = cv2.dilate(img, kernel, iterations=15)
+
+    return img
 
 
 def binalize(img):
@@ -25,6 +43,11 @@ def binalize(img):
     retval, img_bin = cv2.threshold(img_gray, 0, 255, cv2.THRESH_OTSU)
 
     return img_bin
+
+
+def get_edge(img):
+    img = cv2.Canny(img, 10, 255, apertureSize=3)
+    return img
 
 
 def get_contour(img):
@@ -47,27 +70,9 @@ def get_contour(img):
     arc_len = cv2.arcLength(max_contour, True)
 
     # 輪郭を近似
-    approx_contour = cv2.approxPolyDP(max_contour, epsilon=0.05 * arc_len, closed=True)
+    approx_contour = cv2.approxPolyDP(max_contour, epsilon=0.1 * arc_len, closed=True)
 
     return approx_contour
-
-
-def noise_reduction(img):
-
-    # 平滑化がないと領域抽出で、プレート内の文字領域を抽出してしまう。
-    img = cv2.medianBlur(img, 15)
-
-    # # 画像の膨張・縮小によるノイズ除去
-    kernel = np.ones((5, 5), np.uint8)
-    img = cv2.dilate(img, kernel, iterations=7)
-    img = cv2.erode(img, kernel, iterations=7)
-
-    return img
-
-
-def get_edge(img):
-    img = cv2.Canny(img, 10, 255, apertureSize=3)
-    return img
 
 
 def get_plate_img(org_img, contour):
@@ -75,11 +80,11 @@ def get_plate_img(org_img, contour):
 
     left = sorted(approx, key=lambda x: x[0])[:2]
     right = sorted(approx, key=lambda x: x[0])[2:]
-
     left_down = sorted(left, key=lambda x: x[0][1])[0]
     left_up = sorted(left, key=lambda x: x[0][1])[1]
     right_down = sorted(right, key=lambda x: x[0][1])[0]
     right_up = sorted(right, key=lambda x: x[0][1])[1]
+
     perspective_base = np.float32([left_down, right_down, right_up, left_up])
     perspective = np.float32([[0, 0], [700, 0], [700, 500], [0, 500]])
 
