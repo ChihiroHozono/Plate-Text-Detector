@@ -3,15 +3,10 @@ import numpy as np
 from matplotlib import pyplot as plt
 from pylsd.lsd import lsd
 
-img_path = (
-    "/Users/Chihiro/Personal/10_Projects/GPC/get_plant_plate_txt/image/20200411_1.jpg"
-)
-output_dir = "/Users/Chihiro/Desktop/"
-org_img = cv2.imread(img_path)
-
 
 def mask_img(img):
     hue_lower = 165
+    hue_lower = 100
     hue_upper = 200
 
     return_img = np.full_like(img, 255, dtype=np.uint8)
@@ -44,7 +39,7 @@ def binalize(img):
     return img_bin
 
 
-def get_contour(org_img, img):
+def get_contour(output_dir, org_img, img):
 
     contours_img = org_img
 
@@ -83,7 +78,7 @@ def noise_reduction(img):
 
 
 # 歪み補正
-def get_plate_img(contour):
+def get_plate_img(org_img, contour):
     approx = contour.tolist()
 
     left = sorted(approx, key=lambda x: x[0])[:2]
