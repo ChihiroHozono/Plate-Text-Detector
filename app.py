@@ -25,7 +25,7 @@ def main(output_dir, input_img):
     processed_img = org_img
     basename = os.path.basename(input_img)
     file_name = os.path.splitext(basename)[0] + ".png"
-    output_path = os.path.join(output_dir, file_name)
+    output_path = os.path.join(output_dir, f"corrected{file_name}")
 
     img = mask_img(processed_img)
     img = noise_reduction(img)
