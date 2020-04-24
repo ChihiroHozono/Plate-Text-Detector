@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 
-def mask_img(img):
+def mask_and_binalize_img(img):
     masked_img = np.full_like(img, 0, dtype=np.uint8)
     hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
@@ -15,20 +15,20 @@ def mask_img(img):
             else:
                 continue
 
-    return masked_img
+    return masked_img[:, :, 0]
 
 
 def noise_reduction(img):
 
     # 平滑化がないと領域抽出で、プレート内の文字領域を抽出してしまう。
-    img = cv2.medianBlur(img, 15)
+    # 　⇨なくても良さげ。
+    # img = cv2.medianBlur(img, 15)
 
     # 画像の膨張・縮小によるノイズ除去
     kernel = np.ones((5, 5), np.uint8)
-
     # 先にクロージングする事で、オープニング時にプレートのピクセルが欠損する事を防ぐ。
-    img = cv2.dilate(img, kernel, iterations=5)
-    img = cv2.erode(img, kernel, iterations=5)
+    img = cv2.dilate(img, kernel, iterations=6)
+    img = cv2.erode(img, kernel, iterations=6)
 
     img = cv2.erode(img, kernel, iterations=15)
     img = cv2.dilate(img, kernel, iterations=15)
@@ -36,40 +36,29 @@ def noise_reduction(img):
     return img
 
 
-def binalize(img):
-    img_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-
-    # 大津の二値化
-    retval, img_bin = cv2.threshold(img_gray, 0, 255, cv2.THRESH_OTSU)
-
-    return img_bin
-
-
 def get_edge(img):
     img = cv2.Canny(img, 10, 255, apertureSize=3)
     return img
 
 
-def get_contour(img):
+def get_plate_contour(img):
 
-    #  領域の抽出
+    #  輪郭の抽出
     img, contours, hierarchy = cv2.findContours(
         img, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE
     )
-    # 面積の取得
+    #  輪郭ごとの面積を取得
     contour_areas = {}
     for i, contour in enumerate(contours):
         area = cv2.contourArea(contour)
         contour_areas[i] = area
 
-    # 面積が最大のindexを取得
     max_area = max(contour_areas.values())
     max_area_idx = [i for i, v in contour_areas.items() if v == max_area][0]
-
     max_contour = contours[max_area_idx]
-    arc_len = cv2.arcLength(max_contour, True)
 
     # 輪郭を近似
+    arc_len = cv2.arcLength(max_contour, True)
     approx_contour = cv2.approxPolyDP(max_contour, epsilon=0.1 * arc_len, closed=True)
 
     return approx_contour
@@ -89,6 +78,6 @@ def get_plate_img(org_img, contour):
     perspective = np.float32([[0, 0], [700, 0], [700, 500], [0, 500]])
 
     psp_matrix = cv2.getPerspectiveTransform(perspective_base, perspective)
-    img_psp = cv2.warpPerspective(org_img, psp_matrix, (700, 500))
+    plate_img = cv2.warpPerspective(org_img, psp_matrix, (700, 500))
 
-    return img_psp
+    return plate_img
