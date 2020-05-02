@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from pylsd.lsd import lsd
 
 import click
-from modules.preprocess import (
+from modules.get_plate_img import (
     mask_and_binalize_img,
     noise_reduction,
     get_plate_contour,

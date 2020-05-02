@@ -20,13 +20,9 @@ def mask_and_binalize_img(img):
 
 def noise_reduction(img):
 
-    # 平滑化がないと領域抽出で、プレート内の文字領域を抽出してしまう。
-    # 　⇨なくても良さげ。
-    # img = cv2.medianBlur(img, 15)
-
-    # 画像の膨張・縮小によるノイズ除去
+    # 画像の膨張・縮小によるノイズ除去。先にクロージングする事で、オープニング時にプレートのピクセルが欠損する事を防ぐ。
     kernel = np.ones((5, 5), np.uint8)
-    # 先にクロージングする事で、オープニング時にプレートのピクセルが欠損する事を防ぐ。
+
     img = cv2.dilate(img, kernel, iterations=6)
     img = cv2.erode(img, kernel, iterations=6)
 
@@ -47,12 +43,13 @@ def get_plate_contour(img):
     img, contours, hierarchy = cv2.findContours(
         img, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE
     )
-    #  輪郭ごとの面積を取得
+    #  各輪郭の面積を取得
     contour_areas = {}
     for i, contour in enumerate(contours):
         area = cv2.contourArea(contour)
         contour_areas[i] = area
 
+    # プレートの面積を取得
     max_area = max(contour_areas.values())
     max_area_idx = [i for i, v in contour_areas.items() if v == max_area][0]
     max_contour = contours[max_area_idx]
